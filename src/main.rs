@@ -1,8 +1,12 @@
 mod error_handling;
+mod scanner;
+mod token_type;
 
 use std::env;
 use std::fs;
 use std::process;
+
+use token_type::Token;
 
 fn run(source: &str) -> Result<(), String> {
     //  get tokens
