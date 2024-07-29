@@ -1,5 +1,7 @@
 use core::fmt;
 
+use crate::scanner::LiteralValue;
+
 #[derive(Debug)]
 pub enum TokenType {
     // Single-character tokens.
@@ -59,16 +61,25 @@ impl fmt::Display for TokenType {
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
-    pub literal: String,
-    pub line: i32,
+    pub literal: Option<LiteralValue>,
+    pub line: usize,
 }
 
 impl ToString for Token {
     fn to_string(&self) -> String {
-        return self.token_type.to_string()
-            + " "
-            + self.lexeme.as_str()
-            + " "
-            + self.literal.as_str();
+    
+        match &self.literal {
+            Some(val) => {
+                return self.token_type.to_string()
+                    + " "
+                    + self.lexeme.as_str()
+                    + " "
+                    + val.to_string().as_str();
+            }
+            None => {return self.token_type.to_string()
+                + " "
+                + self.lexeme.as_str();
+            }
+        }
     }
 }
