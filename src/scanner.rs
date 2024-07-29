@@ -1,4 +1,4 @@
-use std::{fmt::Error, ptr::null};
+use std::ptr::null;
 
 use crate::token_type::{Token, TokenType};
 
@@ -20,7 +20,7 @@ impl Scanner {
             self.start = self.current;
             match self.scanToken() {
                 Ok(_) => (),
-                Err(msg) => return Err(msg.to_string()),
+                Err(msg) => return Err(msg),
             }
         }
 
@@ -36,8 +36,6 @@ impl Scanner {
     }
 
     fn scanToken(&mut self) -> Result<(), String> {
-        // let c: char = advance();
-
         match self.advance() {
             Ok(c) => match c {
                 '(' => Ok(self.add_token_null_literal(TokenType::LeftParen)),
@@ -51,32 +49,82 @@ impl Scanner {
                 ';' => Ok(self.add_token_null_literal(TokenType::Semicolon)),
                 '*' => Ok(self.add_token_null_literal(TokenType::Star)),
 
-                // '!' | '=' | '<' | '>' => {
-
-                // }
-                // '!' => Ok(match()),
-                // '=' => Ok(self.add_token_null_literal(TokenType::Star)),
-                // '<' => Ok(self.add_token_null_literal(TokenType::Star)),
-                // '>' => Ok(self.add_token_null_literal(TokenType::Star)),
-                _ => Err("Unexpected character".to_string()),
+                '!' => match self.isCharMatch('=') {
+                    Ok(was_match) => {
+                        if was_match {
+                            Ok(self.add_token_null_literal(TokenType::BangEqual))
+                        } else {
+                            Ok(self.add_token_null_literal(TokenType::Bang))
+                        }
+                    }
+                    Err(msg) => Err(msg),
+                },
+                '=' => match self.isCharMatch('=') {
+                    Ok(was_match) => {
+                        if was_match {
+                            Ok(self.add_token_null_literal(TokenType::EqualEqual))
+                        } else {
+                            Ok(self.add_token_null_literal(TokenType::Equal))
+                        }
+                    }
+                    Err(msg) => Err(msg),
+                },
+                '<' => match self.isCharMatch('=') {
+                    Ok(was_match) => {
+                        if was_match {
+                            Ok(self.add_token_null_literal(TokenType::LessEqual))
+                        } else {
+                            Ok(self.add_token_null_literal(TokenType::Less))
+                        }
+                    }
+                    Err(msg) => Err(msg),
+                },
+                '>' => match self.isCharMatch('=') {
+                    Ok(was_match) => {
+                        if was_match {
+                            Ok(self.add_token_null_literal(TokenType::GreaterEqual))
+                        } else {
+                            Ok(self.add_token_null_literal(TokenType::Greater))
+                        }
+                    }
+                    Err(msg) => Err(msg),
+                },
+                '/' => match self.isCharMatch('/') {
+                    Ok(was_match) => {
+                        if was_match {
+                            while self.peek() != Ok('\n') && !isAtEnd(self) {
+                                match self.advance() {
+                                    Ok(_) => (),
+                                    Err(msg) => return Err(msg),
+                                }
+                            }
+                        } else {
+                            self.add_token_null_literal(TokenType::Slash);
+                        }
+                        Ok(())
+                    }
+                    Err(msg) => Err(msg),
+                },
+                ' ' | '\r' | '\t' => Ok(()),
+                '\n' => {
+                    self.line += 1;
+                    Ok(())
+                }
+                '"' => match self.string() {
+                    Ok(_) => Ok(()),
+                    Err(msg) => Err(msg),
+                },
+                _ => {
+                    if isDigit(c) {
+                        number()
+                    } else {
+                        Err("Unexpected character".to_string())
+                    }
+                }
             },
             Err(msg) => Err(msg),
         }
     }
-
-    // case '*': addToken(STAR); break;
-    // case '!':
-    // addToken(match('=') ? BANG_EQUAL : BANG);
-    // break;
-    // case '=':
-    // addToken(match('=') ? EQUAL_EQUAL : EQUAL);
-    // break;
-    // case '<':
-    // addToken(match('=') ? LESS_EQUAL : LESS);
-    // break;
-    // case '>':
-    // addToken(match('=') ? GREATER_EQUAL : GREATER);
-    // break;
 
     fn advance(&mut self) -> Result<char, String> {
         self.current += 1;
@@ -109,11 +157,76 @@ impl Scanner {
                     return Ok(false);
                 }
             }
-            Err(msg) => return Err(msg.to_string()),
+            Err(msg) => return Err(msg),
         }
 
         self.current += 1;
         return Ok(true);
+    }
+
+    fn peek(&self) -> Result<char, String> {
+        if isAtEnd(self) {
+            return Ok('\0');
+        }
+        charAt(&self.source, self.current)
+    }
+
+    fn peek_next(&self) -> Result<char, String> {
+        if (self.current + 1) as usize >= self.source.len() {
+            return Ok('\0');
+        }
+
+        charAt(&self.source, self.current + 1)
+    }
+
+    fn string(&mut self) -> Result<(), String> {
+        while self.peek() != Ok('"') && !isAtEnd(self) {
+            if self.peek() == Ok('\n') {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if isAtEnd(self) {
+            self.error(self.line, "Unterminated string.".to_string());
+            return Ok(());
+        }
+
+        match self.advance() {
+            Ok(_) => {
+                let value = &self.source[self.start as usize + 1..self.current as usize - 1];
+                self.add_token(TokenType::String, value.to_string());
+                return Ok(());
+            }
+            Err(msg) => Err(msg),
+        }
+    }
+
+    fn error(&self, line: i32, message: String) {
+        self.report(line, "".to_string(), message);
+    }
+
+    fn report(&self, line: i32, where_from: String, message: String) {
+        println!("[line {} ] Error {}: {}", line, where_from, message);
+        let _had_error = true;
+    }
+
+    fn number(&self) -> Result<(), String> {
+        match self.peek() {
+            Ok(c) => {}
+            Err(msg) => return Err(msg),
+        };
+
+        // while isDigit(c) {
+        //     if self.peek() == Ok('.') && isDigit(self.peek_next()) {
+        //         self.advance();
+        //     }
+
+        //     match self.peek() {
+        //         Ok(c) => {}
+        //         Err(msg) => return Err(msg),
+        //     };
+        // }
     }
 }
 
@@ -122,8 +235,13 @@ fn isAtEnd(scanner: &Scanner) -> bool {
 }
 
 fn charAt(string: &String, index: i32) -> Result<char, String> {
-    match string.chars().nth(index as usize) {
-        Some(char) => Ok(char),
-        None => Err("Index out of bounds".to_string()),
+    if index as usize >= string.len() {
+        return Err("Index out of bounds".to_string());
     }
+
+    Ok(string.as_bytes()[index as usize] as char)
+}
+
+fn isDigit(c: char) -> bool {
+    return c >= '0' && c <= '9';
 }
