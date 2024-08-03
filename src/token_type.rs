@@ -2,7 +2,7 @@ use core::fmt;
 
 use crate::scanner::LiteralValue;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,

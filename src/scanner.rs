@@ -23,7 +23,7 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: usize,
-    keywords: HashMap<&str, TokenType>,
+    keywords: HashMap<String, TokenType>,
 }
 
 impl Scanner {
@@ -35,21 +35,21 @@ impl Scanner {
             current: 0,
             line: 0,
             keywords: HashMap::from([
-                ("and", TokenType::And),
-                ("class", TokenType::Class),
-                ("false", TokenType::False),
-                ("for", TokenType::For),
-                ("fun", TokenType::Fun),
-                ("if", TokenType::If),
-                ("nil", TokenType::Nil),
-                ("or", TokenType::Or),
-                ("print", TokenType::Print),
-                ("return", TokenType::Return),
-                ("super", TokenType::Super),
-                ("this", TokenType::This),
-                ("true", TokenType::True),
-                ("var", TokenType::Var),
-                ("while", TokenType::While),
+                ("and".to_string(), TokenType::And),
+                ("class".to_string(), TokenType::Class),
+                ("false".to_string(), TokenType::False),
+                ("for".to_string(), TokenType::For),
+                ("fun".to_string(), TokenType::Fun),
+                ("if".to_string(), TokenType::If),
+                ("nil".to_string(), TokenType::Nil),
+                ("or".to_string(), TokenType::Or),
+                ("print".to_string(), TokenType::Print),
+                ("return".to_string(), TokenType::Return),
+                ("super".to_string(), TokenType::Super),
+                ("this".to_string(), TokenType::This),
+                ("true".to_string(), TokenType::True),
+                ("var".to_string(), TokenType::Var),
+                ("while".to_string(), TokenType::While),
             ]),
         }
     }
@@ -244,12 +244,14 @@ impl Scanner {
             self.advance();
         }
 
-        let text: &str = &self.source[self.start..self.current];
-        let mut token_type = *self.keywords.get(text).unwrap();
-        if token_type == null {
-            token_type = TokenType::Identifier;
+        let text = &self.source[self.start..self.current].to_string();
+        match self.keywords.get(text) {
+            Some(token_type) => {
+
+                self.add_token(token_type.clone())            
+            },
+            None => self.add_token(TokenType::Identifier),
         }
-        self.add_token(token_type)
     }
 }
 
