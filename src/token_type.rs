@@ -67,7 +67,6 @@ pub struct Token {
 
 impl ToString for Token {
     fn to_string(&self) -> String {
-    
         match &self.literal {
             Some(val) => {
                 return self.token_type.to_string()
@@ -76,9 +75,8 @@ impl ToString for Token {
                     + " "
                     + val.to_string().as_str();
             }
-            None => {return self.token_type.to_string()
-                + " "
-                + self.lexeme.as_str();
+            None => {
+                return self.token_type.to_string() + " " + self.lexeme.as_str();
             }
         }
     }

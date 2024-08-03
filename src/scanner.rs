@@ -25,17 +25,14 @@ pub struct Scanner {
 }
 
 impl Scanner {
-    fn scan_tokens(&mut self) -> Result<(), String> {
+    fn scan_tokens(&mut self) {
         let line: usize = 1;
 
         // while not at end
         while !isAtEnd(&self) {
             // set start to current
             self.start = self.current;
-            match self.scanToken() {
-                Ok(_) => (),
-                Err(msg) => return Err(msg),
-            }
+            self.scanToken();
         }
 
         // add EOF token
@@ -45,108 +42,88 @@ impl Scanner {
             literal: None,
             line,
         });
-
-        return Ok(());
     }
 
-    fn scanToken(&mut self) -> Result<(), String> {
-        match self.advance() {
-            Ok(c) => match c {
-                '(' => Ok(self.add_token(TokenType::LeftParen)),
-                ')' => Ok(self.add_token(TokenType::RightParen)),
-                '{' => Ok(self.add_token(TokenType::LeftBrace)),
-                '}' => Ok(self.add_token(TokenType::RightBrace)),
-                ',' => Ok(self.add_token(TokenType::Comma)),
-                '.' => Ok(self.add_token(TokenType::Dot)),
-                '-' => Ok(self.add_token(TokenType::Minus)),
-                '+' => Ok(self.add_token(TokenType::Plus)),
-                ';' => Ok(self.add_token(TokenType::Semicolon)),
-                '*' => Ok(self.add_token(TokenType::Star)),
+    fn scanToken(&mut self) {
+        let c = self.advance();
 
-                '!' => match self.isCharMatch('=') {
-                    Ok(was_match) => {
-                        if was_match {
-                            Ok(self.add_token(TokenType::BangEqual))
-                        } else {
-                            Ok(self.add_token(TokenType::Bang))
-                        }
-                    }
-                    Err(msg) => Err(msg),
-                },
-                '=' => match self.isCharMatch('=') {
-                    Ok(was_match) => {
-                        if was_match {
-                            Ok(self.add_token(TokenType::EqualEqual))
-                        } else {
-                            Ok(self.add_token(TokenType::Equal))
-                        }
-                    }
-                    Err(msg) => Err(msg),
-                },
-                '<' => match self.isCharMatch('=') {
-                    Ok(was_match) => {
-                        if was_match {
-                            Ok(self.add_token(TokenType::LessEqual))
-                        } else {
-                            Ok(self.add_token(TokenType::Less))
-                        }
-                    }
-                    Err(msg) => Err(msg),
-                },
-                '>' => match self.isCharMatch('=') {
-                    Ok(was_match) => {
-                        if was_match {
-                            Ok(self.add_token(TokenType::GreaterEqual))
-                        } else {
-                            Ok(self.add_token(TokenType::Greater))
-                        }
-                    }
-                    Err(msg) => Err(msg),
-                },
-                '/' => match self.isCharMatch('/') {
-                    Ok(was_match) => {
-                        if was_match {
-                            while self.peek() != Ok('\n') && !isAtEnd(self) {
-                                match self.advance() {
-                                    Ok(_) => (),
-                                    Err(msg) => return Err(msg),
-                                }
-                            }
-                        } else {
-                            self.add_token(TokenType::Slash);
-                        }
-                        Ok(())
-                    }
-                    Err(msg) => Err(msg),
-                },
-                ' ' | '\r' | '\t' => Ok(()),
-                '\n' => {
-                    self.line += 1;
-                    Ok(())
+        match c {
+            // match self.advance() {
+            // Ok(c) => match c {
+            '(' => self.add_token(TokenType::LeftParen),
+            ')' => self.add_token(TokenType::RightParen),
+            '{' => self.add_token(TokenType::LeftBrace),
+            '}' => self.add_token(TokenType::RightBrace),
+            ',' => self.add_token(TokenType::Comma),
+            '.' => self.add_token(TokenType::Dot),
+            '-' => self.add_token(TokenType::Minus),
+            '+' => self.add_token(TokenType::Plus),
+            ';' => self.add_token(TokenType::Semicolon),
+            '*' => self.add_token(TokenType::Star),
+            '!' => {
+                if self.isCharMatch('=') {
+                    self.add_token(TokenType::BangEqual)
+                } else {
+                    self.add_token(TokenType::Bang)
                 }
-                '"' => match self.string() {
-                    Ok(_) => Ok(()),
-                    Err(msg) => Err(msg),
-                },
-                _ => {
-                    if isDigit(c) {
-                        number()
-                    } else {
-                        Err("Unexpected character".to_string())
-                    }
+            }
+            '=' => {
+                if self.isCharMatch('=') {
+                    self.add_token(TokenType::EqualEqual)
+                } else {
+                    self.add_token(TokenType::Equal)
                 }
-            },
-            Err(msg) => Err(msg),
+            }
+            '<' => {
+                if self.isCharMatch('=') {
+                    self.add_token(TokenType::LessEqual)
+                } else {
+                    self.add_token(TokenType::Less)
+                }
+            }
+            '>' => {
+                if self.isCharMatch('=') {
+                    self.add_token(TokenType::GreaterEqual)
+                } else {
+                    self.add_token(TokenType::Greater)
+                }
+            }
+            '/' => {
+                if self.isCharMatch('/') {
+                    while self.peek() != '\n' && !isAtEnd(&self) {
+                        self.advance();
+                    }
+                } else {
+                    self.add_token(TokenType::Slash)
+                }
+            }
+            ' ' | '\r' | '\t' => {}
+            '\n' => self.line += 1,
+            '"' => self.string(),
+            'o' => {
+                if self.peek() == 'r' {
+                    self.add_token(TokenType::Or)
+                }
+            }
+            _ => {
+                if isDigit(c) {
+                    self.number()
+                } else if isAlpha(c) {
+                    self.identifier();
+                } else {
+                    self.error(self.line, "Unexpected character".to_string())
+                }
+            }
         }
     }
 
-    fn advance(&mut self) -> Result<char, String> {
+    fn advance(&mut self) -> char {
         self.current += 1;
         charAt(&self.source, self.current - 1)
     }
 
     fn add_token_literal(&mut self, token_type: TokenType, literal: Option<LiteralValue>) {
-        let text = &self.source[self.start..self.current];
+        let text: &str = &self.source[self.start..self.current];
         self.tokens.push(Token {
             token_type: token_type,
             lexeme: text.to_string(),
@@ -159,60 +136,61 @@ impl Scanner {
         self.add_token_literal(token_type, None);
     }
 
-    fn isCharMatch(&mut self, expected: char) -> Result<bool, String> {
+    fn isCharMatch(&mut self, expected: char) -> bool {
         if isAtEnd(self) {
-            return Ok(false);
+            return false;
         };
 
-        match charAt(&self.source, self.current) {
-            Ok(currentChar) => {
-                if currentChar != expected {
-                    return Ok(false);
-                }
-            }
-            Err(msg) => return Err(msg),
+        // match charAt(&self.source, self.current) {
+        //     Ok(currentChar) => {
+        //         if currentChar != expected {
+        //             return false;
+        //         }
+        //     }
+        //     Err(msg) => return Err(msg),
+        // }
+
+        if charAt(&self.source, self.current) != expected {
+            return false;
         }
 
         self.current += 1;
-        return Ok(true);
+        return true;
     }
 
-    fn peek(&self) -> Result<char, String> {
+    fn peek(&self) -> char {
         if isAtEnd(self) {
-            return Ok('\0');
+            return '\0';
         }
         charAt(&self.source, self.current)
     }
 
-    fn peek_next(&self) -> Result<char, String> {
+    fn peek_next(&self) -> char {
         if (self.current + 1) as usize >= self.source.len() {
-            return Ok('\0');
+            return '\0';
         }
 
         charAt(&self.source, self.current + 1)
     }
 
-    fn string(&mut self) -> Result<(), String> {
-        while self.peek() != Ok('"') && !isAtEnd(self) {
-            if self.peek() == Ok('\n') {
+    fn string(&mut self) {
+        while self.peek() != '"' && isAtEnd(&self) {
+            if self.peek() == '\n' {
                 self.line += 1;
             }
             self.advance();
         }
 
-        if isAtEnd(self) {
+        if isAtEnd(&self) {
             self.error(self.line, "Unterminated string.".to_string());
-            return Ok(());
         }
 
-        match self.advance() {
-            Ok(_) => {
-                let value = &self.source[self.start + 1..self.current - 1];
-                self.add_token_literal(TokenType::String, Some(LiteralValue::SValue(value.to_string())));
-                return Ok(());
-            }
-            Err(msg) => Err(msg),
-        }
+        self.advance();
+        let val = &self.source[self.start + 1..self.current - 1];
+        self.add_token_literal(
+            TokenType::String,
+            Some(LiteralValue::SValue(val.to_string())),
+        )
     }
 
     fn error(&self, line: usize, message: String) {
@@ -224,28 +202,26 @@ impl Scanner {
         let _had_error = true;
     }
 
-    fn number(&self) -> Result<(), String> {
-        match self.peek() {
-            Ok(c) => {while isDigit(c) {
-                if self.peek() == Ok('.') && isDigit(self.peek_next()) {
-                    self.advance();
-                }
-    
-                match self.peek() {
-                    Ok(c) => {}
-                    Err(msg) => return Err(msg),
-                };
+    fn number(&mut self) {
+        while isDigit(self.peek()) {
+            self.advance();
+        }
+        if self.peek() == '.' && isDigit(self.peek_next()) {
+            // consume the .
+            self.advance();
+            while isDigit(self.peek()) {
+                self.advance();
             }
-    
-            match &self.source[self.start..self.current].parse::<f32>() {
-                Ok(val) => {
-                    self.add_token_literal(TokenType::Number, Some(LiteralValue::FValue(*val)));
-                    return Ok(());
-                    },
-                Err(msg) => return Err(msg.to_string()),
-            }}
-            Err(msg) => return Err(msg),
-        };
+        }
+        let double = &self.source[self.start..self.current].parse::<f32>().unwrap();
+        self.add_token_literal(
+            TokenType::Number,
+            Some(LiteralValue::FValue(*double)),
+        )
+    }
+
+    fn identifier(&self) {
+        return;
     }
 }
 
@@ -253,14 +229,14 @@ fn isAtEnd(scanner: &Scanner) -> bool {
     return (scanner.current) >= scanner.source.len();
 }
 
-fn charAt(string: &String, index: usize) -> Result<char, String> {
-    if index >= string.len() {
-        return Err("Index out of bounds".to_string());
-    }
-
-    Ok(string.as_bytes()[index] as char)
+fn charAt(string: &String, index: usize) -> char {
+    string.as_bytes()[index] as char
 }
 
 fn isDigit(c: char) -> bool {
     return c >= '0' && c <= '9';
+}
+
+fn isAlpha(c: char) -> bool {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
