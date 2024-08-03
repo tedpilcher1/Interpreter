@@ -1,6 +1,7 @@
-use std::ptr::null;
+use std::{hash::Hash, ptr::null};
 
-use crate::token_type::{Token, TokenType};
+use crate::token_type::{self, Token, TokenType};
+use std::collections::HashMap;
 
 pub enum LiteralValue {
     FValue(f32),
@@ -22,14 +23,42 @@ pub struct Scanner {
     start: usize,
     current: usize,
     line: usize,
+    keywords: HashMap<&str, TokenType>,
 }
 
 impl Scanner {
+    pub fn new(source: String) -> Self {
+        Self {
+            source,
+            tokens: vec![],
+            start: 0,
+            current: 0,
+            line: 0,
+            keywords: HashMap::from([
+                ("and", TokenType::And),
+                ("class", TokenType::Class),
+                ("false", TokenType::False),
+                ("for", TokenType::For),
+                ("fun", TokenType::Fun),
+                ("if", TokenType::If),
+                ("nil", TokenType::Nil),
+                ("or", TokenType::Or),
+                ("print", TokenType::Print),
+                ("return", TokenType::Return),
+                ("super", TokenType::Super),
+                ("this", TokenType::This),
+                ("true", TokenType::True),
+                ("var", TokenType::Var),
+                ("while", TokenType::While),
+            ]),
+        }
+    }
+
     fn scan_tokens(&mut self) {
         let line: usize = 1;
 
         // while not at end
-        while !isAtEnd(&self) {
+        while !is_at_end(&self) {
             // set start to current
             self.start = self.current;
             self.scanToken();
@@ -90,7 +119,7 @@ impl Scanner {
             }
             '/' => {
                 if self.isCharMatch('/') {
-                    while self.peek() != '\n' && !isAtEnd(&self) {
+                    while self.peek() != '\n' && !is_at_end(&self) {
                         self.advance();
                     }
                 } else {
@@ -106,9 +135,9 @@ impl Scanner {
                 }
             }
             _ => {
-                if isDigit(c) {
+                if is_digit(c) {
                     self.number()
-                } else if isAlpha(c) {
+                } else if is_alpha(c) {
                     self.identifier();
                 } else {
                     self.error(self.line, "Unexpected character".to_string())
@@ -119,7 +148,7 @@ impl Scanner {
 
     fn advance(&mut self) -> char {
         self.current += 1;
-        charAt(&self.source, self.current - 1)
+        char_at(&self.source, self.current - 1)
     }
 
     fn add_token_literal(&mut self, token_type: TokenType, literal: Option<LiteralValue>) {
@@ -137,11 +166,11 @@ impl Scanner {
     }
 
     fn isCharMatch(&mut self, expected: char) -> bool {
-        if isAtEnd(self) {
+        if is_at_end(self) {
             return false;
         };
 
-        if charAt(&self.source, self.current) != expected {
+        if char_at(&self.source, self.current) != expected {
             return false;
         }
 
@@ -150,10 +179,10 @@ impl Scanner {
     }
 
     fn peek(&self) -> char {
-        if isAtEnd(self) {
+        if is_at_end(self) {
             return '\0';
         }
-        charAt(&self.source, self.current)
+        char_at(&self.source, self.current)
     }
 
     fn peek_next(&self) -> char {
@@ -161,18 +190,18 @@ impl Scanner {
             return '\0';
         }
 
-        charAt(&self.source, self.current + 1)
+        char_at(&self.source, self.current + 1)
     }
 
     fn string(&mut self) {
-        while self.peek() != '"' && isAtEnd(&self) {
+        while self.peek() != '"' && is_at_end(&self) {
             if self.peek() == '\n' {
                 self.line += 1;
             }
             self.advance();
         }
 
-        if isAtEnd(&self) {
+        if is_at_end(&self) {
             self.error(self.line, "Unterminated string.".to_string());
         }
 
@@ -194,40 +223,52 @@ impl Scanner {
     }
 
     fn number(&mut self) {
-        while isDigit(self.peek()) {
+        while is_digit(self.peek()) {
             self.advance();
         }
-        if self.peek() == '.' && isDigit(self.peek_next()) {
+        if self.peek() == '.' && is_digit(self.peek_next()) {
             // consume the .
             self.advance();
-            while isDigit(self.peek()) {
+            while is_digit(self.peek()) {
                 self.advance();
             }
         }
-        let double = &self.source[self.start..self.current].parse::<f32>().unwrap();
-        self.add_token_literal(
-            TokenType::Number,
-            Some(LiteralValue::FValue(*double)),
-        )
+        let double = &self.source[self.start..self.current]
+            .parse::<f32>()
+            .unwrap();
+        self.add_token_literal(TokenType::Number, Some(LiteralValue::FValue(*double)))
     }
 
-    fn identifier(&self) {
-        return;
+    fn identifier(&mut self) {
+        while is_alpha_numeric(self.peek()) {
+            self.advance();
+        }
+
+        let text: &str = &self.source[self.start..self.current];
+        let mut token_type = *self.keywords.get(text).unwrap();
+        if token_type == null {
+            token_type = TokenType::Identifier;
+        }
+        self.add_token(token_type)
     }
 }
 
-fn isAtEnd(scanner: &Scanner) -> bool {
+fn is_at_end(scanner: &Scanner) -> bool {
     return (scanner.current) >= scanner.source.len();
 }
 
-fn charAt(string: &String, index: usize) -> char {
+fn char_at(string: &String, index: usize) -> char {
     string.as_bytes()[index] as char
 }
 
-fn isDigit(c: char) -> bool {
+fn is_digit(c: char) -> bool {
     return c >= '0' && c <= '9';
 }
 
-fn isAlpha(c: char) -> bool {
+fn is_alpha(c: char) -> bool {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+}
+
+fn is_alpha_numeric(c: char) -> bool {
+    return is_alpha(c) || is_digit(c);
 }
