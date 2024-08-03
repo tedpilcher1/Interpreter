@@ -141,15 +141,6 @@ impl Scanner {
             return false;
         };
 
-        // match charAt(&self.source, self.current) {
-        //     Ok(currentChar) => {
-        //         if currentChar != expected {
-        //             return false;
-        //         }
-        //     }
-        //     Err(msg) => return Err(msg),
-        // }
-
         if charAt(&self.source, self.current) != expected {
             return false;
         }
