@@ -1,4 +1,6 @@
 mod error_handling;
+mod expressions;
+mod printer;
 mod scanner;
 mod token_type;
 

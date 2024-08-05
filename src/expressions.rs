@@ -1,3 +1,5 @@
+use crate::token_type::TokenType;
+
 pub enum Expr {
     Literal(LiteralExpression),
     Unary(UnaryExpression),
@@ -5,13 +7,13 @@ pub enum Expr {
     Grouping(GroupingExpression),
 }
 
-struct BinaryExpression {
+pub struct BinaryExpression {
     left: Box<Expr>,
     operator: TokenType,
     right: Box<Expr>,
 }
 
-struct UnaryExpression {
+pub struct UnaryExpression {
     operator: TokenType,
     right: Box<Expr>,
 }
