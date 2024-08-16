@@ -15,4 +15,4 @@ This interpreter is written in Rust, adapting the concepts and techniques presen
 
 ### Installation
 
-1. Clone the repository:
+- TODO
