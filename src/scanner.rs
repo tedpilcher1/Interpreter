@@ -3,6 +3,7 @@ use std::{hash::Hash, ptr::null};
 use crate::token_type::{self, Token, TokenType};
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub enum LiteralValue {
     FValue(f32),
     SValue(String),
@@ -246,10 +247,7 @@ impl Scanner {
 
         let text = &self.source[self.start..self.current].to_string();
         match self.keywords.get(text) {
-            Some(token_type) => {
-
-                self.add_token(token_type.clone())            
-            },
+            Some(token_type) => self.add_token(token_type.clone()),
             None => self.add_token(TokenType::Identifier),
         }
     }

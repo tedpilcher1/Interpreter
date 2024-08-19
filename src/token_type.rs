@@ -2,7 +2,7 @@ use core::fmt;
 
 use crate::scanner::LiteralValue;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -57,6 +57,8 @@ impl fmt::Display for TokenType {
         write!(f, "{:?}", self)
     }
 }
+
+#[derive(Clone)]
 
 pub struct Token {
     pub token_type: TokenType,

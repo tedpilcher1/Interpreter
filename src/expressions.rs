@@ -24,14 +24,14 @@ pub enum Expr {
 // }
 
 pub struct BinaryExpression {
-    left: Box<Expr>,
-    operator: TokenType,
-    right: Box<Expr>,
+    pub left: Box<Expr>,
+    pub operator: TokenType,
+    pub right: Box<Expr>,
 }
 
 pub struct UnaryExpression {
-    operator: TokenType,
-    right: Box<Expr>,
+    pub operator: TokenType,
+    pub right: Box<Expr>,
 }
 
 pub enum LiteralExpression {
@@ -42,5 +42,5 @@ pub enum LiteralExpression {
 }
 
 pub struct GroupingExpression {
-    expression: Box<Expr>,
+    pub expression: Box<Expr>,
 }
