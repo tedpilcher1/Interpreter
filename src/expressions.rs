@@ -1,4 +1,4 @@
-use crate::token_type::TokenType;
+use crate::{scanner::LiteralValue, token_type::TokenType};
 
 pub enum Expr {
     Literal(LiteralExpression),
@@ -43,4 +43,13 @@ pub enum LiteralExpression {
 
 pub struct GroupingExpression {
     pub expression: Box<Expr>,
+}
+
+impl From<LiteralValue> for LiteralExpression {
+    fn from(value: LiteralValue) -> Self {
+        match value {
+            LiteralValue::FValue(f_value) => self::LiteralExpression::Number(f_value),
+            LiteralValue::SValue(s_value) => self::LiteralExpression::String(s_value),
+        }
+    }
 }

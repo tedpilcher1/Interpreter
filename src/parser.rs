@@ -146,14 +146,10 @@ impl Parser {
             return Expr::Literal(LiteralExpression::Nil);
         }
 
-        // TODO: this part
-        // if self.match_token_types(&vec![TokenType::Number, TokenType::String]) {
-        //     match self.previous().token_type {
-
-        //     }
-
-        //     // return Expr::Literal(self.previous().literal.unwrap() as LiteralExpression);
-        // }
+        if self.match_token_types(&vec![TokenType::Number, TokenType::String]) {
+            // could probably avoid the clone here but oh well
+            return Expr::Literal(self.previous().literal.clone().unwrap().into());
+        }
 
         if self.match_token_types(&vec![TokenType::LeftParen]) {
             let expr = self.expression();
@@ -163,12 +159,14 @@ impl Parser {
             });
         }
 
-        todo!()
+        panic!("Primary didn't match an expected token type");
     }
 
     fn consume(&mut self, token_type: TokenType, message: &str) -> Token {
         if self.check(&token_type) {
             return self.advance();
         }
+
+        panic!("{}", message);
     }
 }
