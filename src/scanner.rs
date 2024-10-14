@@ -1,5 +1,3 @@
-use std::{hash::Hash, ptr::null};
-
 use crate::token_type::{self, Token, TokenType};
 use std::collections::HashMap;
 
@@ -55,14 +53,14 @@ impl Scanner {
         }
     }
 
-    fn scan_tokens(&mut self) {
+    pub fn scan_tokens(&mut self) {
         let line: usize = 1;
 
         // while not at end
         while !is_at_end(&self) {
             // set start to current
             self.start = self.current;
-            self.scanToken();
+            self.scan_token();
         }
 
         // add EOF token
@@ -74,7 +72,7 @@ impl Scanner {
         });
     }
 
-    fn scanToken(&mut self) {
+    fn scan_token(&mut self) {
         let c = self.advance();
 
         match c {
@@ -91,35 +89,35 @@ impl Scanner {
             ';' => self.add_token(TokenType::Semicolon),
             '*' => self.add_token(TokenType::Star),
             '!' => {
-                if self.isCharMatch('=') {
+                if self.is_char_match('=') {
                     self.add_token(TokenType::BangEqual)
                 } else {
                     self.add_token(TokenType::Bang)
                 }
             }
             '=' => {
-                if self.isCharMatch('=') {
+                if self.is_char_match('=') {
                     self.add_token(TokenType::EqualEqual)
                 } else {
                     self.add_token(TokenType::Equal)
                 }
             }
             '<' => {
-                if self.isCharMatch('=') {
+                if self.is_char_match('=') {
                     self.add_token(TokenType::LessEqual)
                 } else {
                     self.add_token(TokenType::Less)
                 }
             }
             '>' => {
-                if self.isCharMatch('=') {
+                if self.is_char_match('=') {
                     self.add_token(TokenType::GreaterEqual)
                 } else {
                     self.add_token(TokenType::Greater)
                 }
             }
             '/' => {
-                if self.isCharMatch('/') {
+                if self.is_char_match('/') {
                     while self.peek() != '\n' && !is_at_end(&self) {
                         self.advance();
                     }
@@ -166,7 +164,7 @@ impl Scanner {
         self.add_token_literal(token_type, None);
     }
 
-    fn isCharMatch(&mut self, expected: char) -> bool {
+    fn is_char_match(&mut self, expected: char) -> bool {
         if is_at_end(self) {
             return false;
         };

@@ -7,21 +7,31 @@ pub enum Expr {
     Grouping(GroupingExpression),
 }
 
-// impl ToString for Expr {
-//     fn to_string(&self) -> String {
-//         match self {
-//             Expr::Literal(literal) => match literal {
-//                 LiteralExpression::Number(num) => num.to_string(),
-//                 LiteralExpression::String(string) => string.to_string(),
-//                 LiteralExpression::Boolean(boolean) => boolean.to_string(),
-//                 LiteralExpression::Nil => "nil".to_string(),
-//             },
-//             Expr::Unary(unary) => unary.operator.to_string(),
-//             Expr::Binary(binary) => binary.operator.to_string(),
-//             Expr::Grouping(grouping) => grouping.to_string(),
-//         }
-//     }
-// }
+fn interal_to_string(expr: &Expr) -> String {
+    match expr {
+        Expr::Literal(literal) => match literal {
+            LiteralExpression::Number(num) => num.to_string(),
+            LiteralExpression::String(string) => string.to_string(),
+            LiteralExpression::Boolean(boolean) => boolean.to_string(),
+            LiteralExpression::Nil => "nil".to_string(),
+        },
+        Expr::Unary(unary) => unary.operator.to_string(),
+        Expr::Binary(binary) => binary.operator.to_string(),
+        _ => panic!("Should not hit this arm"),
+    }
+}
+
+impl ToString for Expr {
+    fn to_string(&self) -> String {
+        match self {
+            Expr::Literal(_) | Expr::Binary(_) | Expr::Unary(_) => interal_to_string(self),
+            Expr::Grouping(grouping_expression) => {
+                let expr = grouping_expression.expression.as_ref();
+                interal_to_string(expr)
+            }
+        }
+    }
+}
 
 pub struct BinaryExpression {
     pub left: Box<Expr>,

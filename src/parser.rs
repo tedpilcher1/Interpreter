@@ -3,17 +3,17 @@ use crate::{
     token_type::{self, Token, TokenType},
 };
 
-struct Parser {
+pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
 }
 
 impl Parser {
-    fn parse(&mut self) -> Expr {
+    pub fn parse(&mut self) -> Expr {
         self.expression()
     }
 
-    fn new(tokens: Vec<Token>) -> Self {
+    pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
     }
 

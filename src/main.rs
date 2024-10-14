@@ -9,22 +9,26 @@ use std::env;
 use std::fs;
 use std::process;
 
+use parser::Parser;
+use scanner::Scanner;
 use token_type::Token;
 
 fn run(source: &str) -> Result<(), String> {
-    //  get tokens
-    // just print for now
+    let mut scanner = Scanner::new(source.to_string());
+    scanner.scan_tokens();
 
-    return Err("Not implemented".to_string());
+    let tokens = scanner.tokens;
+    let mut parser = Parser::new(tokens);
+    let expression = parser.parse();
+    println!("{}", expression.to_string());
+
+    return Ok(());
 }
 
 fn run_file(path: &str) -> Result<(), String> {
-    // let bytes: Vec<u8> = fs::read(path).expect("Couldn't read file");
-    // run(String::from_utf8(bytes).expect("Couldn't generate source string from bytes read"));
-
     match fs::read_to_string(path) {
         Ok(contents) => return run(&contents),
-        Err(msg) => return Err(msg.to_string()),
+        Err(msg) => Err(msg.to_string()),
     }
 }
 
