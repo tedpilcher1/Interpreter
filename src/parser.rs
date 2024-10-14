@@ -9,6 +9,10 @@ struct Parser {
 }
 
 impl Parser {
+    fn parse(&mut self) -> Expr {
+        self.expression()
+    }
+
     fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
     }
